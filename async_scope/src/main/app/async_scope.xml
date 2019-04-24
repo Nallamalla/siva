@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="async_scopeFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/siva" allowedMethods="POST" doc:name="HTTP"/>
+        <logger message="flow1 started" level="INFO" doc:name="Logger"/>
+        <async doc:name="Async">
+            <flow-ref name="async_scopeSub_Flow" doc:name="Flow Reference"/>
+        </async>
+        <file:outbound-endpoint path="src/main/resources/flow1" responseTimeout="10000" doc:name="File"/>
+        <logger message="flow1 completed" level="INFO" doc:name="Logger"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <logger level="INFO" doc:name="Logger"/>
+            <set-payload value="#['a number can not divid by zero, please update some positive number']" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+    <sub-flow name="async_scopeSub_Flow">
+        <logger message="flow 2 started" level="INFO" doc:name="Logger"/>
+        <scripting:component doc:name="Groovy">
+            <scripting:script engine="Groovy"><![CDATA[1000/0]]></scripting:script>
+        </scripting:component>
+        <file:outbound-endpoint path="src/main/resources/flow2" responseTimeout="10000" doc:name="File"/>
+        <logger message="flow2 completed" level="INFO" doc:name="Logger"/>
+    </sub-flow>
+</mule>

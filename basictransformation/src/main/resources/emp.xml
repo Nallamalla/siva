@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<root>
+  <Details>
+    <ID>101</ID>
+    <Name>siva</Name>
+    <Salary>5000</Salary>
+    <Dept>IT</Dept>
+    <Address>Tavarekare,Bangalore,KA,India,510234</Address>
+  </Details>
+  <Details>
+    <ID>102</ID>
+    <Name>Kumar</Name>
+    <Salary>10000</Salary>
+    <Dept>Service</Dept>
+    <Address>Maruthalli,Bangalore,KA,India,510237</Address>
+  </Details>
+  <Details>
+    <ID>103</ID>
+    <Name>Reddy</Name>
+    <Salary>15000</Salary>
+    <Dept>BPO</Dept>
+    <Address>Kphp,Hyderabad,AP,India,510239</Address>
+  </Details>
+</root>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd">
+    <db:oracle-config name="Oracle_Configuration" host="localhost" port="1521" instance="XE" user="system" password="root" doc:name="Oracle Configuration"/>
+    <smtp:gmail-connector name="Gmail" contentType="text/html" validateConnections="true" doc:name="Gmail"/>
+    
+    <flow name="batchprocessingFlow" processingStrategy="synchronous">
+        <poll doc:name="Poll">
+            <fixed-frequency-scheduler frequency="60000"/>
+            <batch:execute name="batchprocessingBatch" doc:name="Batch Execute"/>
+        </poll>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <batch:job name="batchprocessingBatch">
+        <batch:input>
+            <logger level="INFO" doc:name="Logger"/>
+            <db:select config-ref="Oracle_Configuration" doc:name="Database">
+                <db:parameterized-query><![CDATA[select * from student]]></db:parameterized-query>
+            </db:select>
+        </batch:input>
+        <batch:process-records>
+            <batch:step name="Batch_Step">
+                <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+            </batch:step>
+        </batch:process-records>
+        <batch:on-complete>
+            <dw:transform-message doc:name="Transform Message" metadata:id="fc49565e-adc6-4eab-8f8f-435dff1bc9f8">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/xlsx 
+---
+{
+	Sheet1: [{
+		BatchProcessID: payload.batchJobInstanceId,
+		"Failed Records": payload.failedRecords,
+		"loaded records": payload.loadedRecords,
+		"Processsed Records": payload.processedRecords,
+		SucessfulRecords: payload.successfulRecords,
+		TotalRecords: payload.totalRecords
+	}]
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <object-to-byte-array-transformer doc:name="Object to Byte Array"/>
+            <set-attachment attachmentName="BatchProceesed.xlsx" value="#[payload]" contentType="text/html" doc:name="Attachment"/>
+            <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="nalamalasiva@gmail.com" password="9666294804" connector-ref="Gmail" to="skr.chiru@gmail.com" from="nalamalasiva@gmail.com" subject="Batch information" cc="shankar.chowdappa10@gmail.com" responseTimeout="10000" doc:name="SMTP"/>
+            <logger level="INFO" doc:name="Logger"/>
+        </batch:on-complete>
+    </batch:job>
+</mule>
